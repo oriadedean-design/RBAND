@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
-import { ArrowRight, ExternalLink } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { sanityService, GalleryImage } from '../services/sanityService';
+import { SmartImage } from '../components/SmartImage';
+import { Seo } from '../components/Seo';
 
 export const Gallery: React.FC = () => {
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -26,6 +27,11 @@ export const Gallery: React.FC = () => {
 
   return (
     <div className="px-6 space-y-32">
+      <Seo
+        title="Gallery"
+        description="Browse and share standout visual work from ROSSE HUB creators."
+        url="/gallery"
+      />
       {/* Gallery Intro */}
       <section className="min-h-[60vh] flex flex-col justify-center">
         <div className="editorial-grid">
@@ -75,11 +81,10 @@ export const Gallery: React.FC = () => {
               transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
               className="w-full h-full overflow-hidden rounded-2xl cursor-pointer"
             >
-              <img 
+              <SmartImage
                 src={image.url} 
                 alt={image.title} 
                 className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 group-hover:scale-110"
-                referrerPolicy="no-referrer"
                 data-pin-url={image.url}
                 data-pin-description={`${image.title} by ${image.creator} at ROSSE HUB`}
               />

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
-import { Mail, MapPin, Instagram, Linkedin } from 'lucide-react';
+import { Mail, MapPin, Instagram } from 'lucide-react';
 import { sanityService, AboutInfo } from '../services/sanityService';
+import { Seo } from '../components/Seo';
 
 export const About: React.FC = () => {
   const [about, setAbout] = useState<AboutInfo | null>(null);
@@ -27,6 +27,11 @@ export const About: React.FC = () => {
 
   return (
     <div className="px-6 space-y-32">
+      <Seo
+        title="About"
+        description={about.description}
+        url="/about"
+      />
       {/* About Intro */}
       <section className="min-h-[60vh] flex flex-col justify-center">
         <div className="editorial-grid">
