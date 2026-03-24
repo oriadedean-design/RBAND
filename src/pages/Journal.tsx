@@ -1,9 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { sanityService, JournalPost } from '../services/sanityService';
+import { SmartImage } from '../components/SmartImage';
+import { Seo } from '../components/Seo';
+
+const formatDateLabel = (dateValue: string) => {
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return dateValue;
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  }).format(date);
+};
 
 export const Journal: React.FC = () => {
   const [posts, setPosts] = useState<JournalPost[]>([]);
@@ -23,99 +34,110 @@ export const Journal: React.FC = () => {
     fetchPosts();
   }, []);
 
+  const featuredPosts = useMemo(() => posts.slice(0, 3), [posts]);
+
   if (loading) return <div className="p-20 text-center mono-meta">LOADING JOURNAL...</div>;
 
   return (
-    <div className="px-6 space-y-32">
-      {/* Editorial Intro */}
-      <section className="min-h-[50vh] flex flex-col justify-center">
-        <div className="editorial-grid">
-          <div className="col-span-12 md:col-span-8">
-            <motion.p 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mono-meta mb-4"
-            >
-              THE JOURNAL
-            </motion.p>
-            <motion.h1 
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="text-[12vw] md:text-[10vw] leading-[0.82] mb-12"
-            >
-              SPOTLIGHTING <br />
-              <span className="serif-italic ml-[10vw]">VISIONARIES</span>
-            </motion.h1>
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="max-w-2xl text-xl md:text-2xl font-light opacity-80 leading-relaxed"
-            >
-              We spotlight photographers, filmmakers, and digital creators. At ROSSE, we honor talent early, inspire voices, and pay homage to legends. Dive in and connect with the creativity that drives us.
-            </motion.div>
+    <div className="px-6 pb-32 space-y-24">
+      <Seo
+        title="Journal Magazine"
+        description="A blog + magazine feed for interviews, creator stories, and editorial drops from ROSSE HUB."
+        url="/journal"
+      />
+
+      <section className="pt-8 border-b border-line pb-16">
+        <div className="flex justify-between items-start gap-8 mb-10">
+          <button className="mono-meta underline underline-offset-4">LOAD MORE</button>
+          <div className="max-w-xl grid grid-cols-2 gap-10 text-sm">
+            {featuredPosts.slice(0, 2).map((post) => (
+              <Link key={post.id} to={`/journal/${post.id}`} className="space-y-2 group">
+                <p className="mono-meta opacity-60">{formatDateLabel(post.date)}</p>
+                <p className="font-semibold leading-tight group-hover:text-accent transition-colors">{post.title}</p>
+              </Link>
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* Posts Grid */}
-      <section className="editorial-grid gap-y-32">
-        {posts.map((post, idx) => (
-          <div 
-            key={post.id}
-            className={`col-span-12 ${idx % 3 === 0 ? 'md:col-span-12' : 'md:col-span-6'}`}
-          >
-            <Link to={`/journal/${post.id}`} className="group block">
-              <div className={`relative overflow-hidden rounded-2xl ${idx % 3 === 0 ? 'aspect-[21/9]' : 'aspect-[4/5]'}`}>
-                <img 
-                  src={post.image} 
-                  alt={post.title} 
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-[18vw] leading-[0.8] tracking-tighter uppercase"
+        >
+          MAGAZINE
+        </motion.h1>
+
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+          {featuredPosts.map((post) => (
+            <Link key={post.id} to={`/journal/${post.id}`} className="group">
+              <div className="relative overflow-hidden rounded-xl aspect-[4/5]">
+                <SmartImage
+                  src={post.image}
+                  alt={post.title}
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8 text-white">
-                  <p className="mono-meta text-white/60 mb-2">{post.date} — {post.category}</p>
-                  <h3 className="text-4xl">{post.title}</h3>
-                </div>
-              </div>
-              <div className="mt-8 flex flex-col md:flex-row justify-between gap-8">
-                <div className="max-w-2xl">
-                  <h3 className="text-4xl md:text-5xl group-hover:text-accent transition-colors mb-6">
-                    {post.title}
-                  </h3>
-                  <p className="opacity-60 text-lg leading-relaxed">
-                    {post.excerpt}
-                  </p>
-                </div>
-                <div className="flex items-end">
-                  <span className="mono-meta flex items-center gap-2 group-hover:text-accent transition-colors">
-                    READ STORY <ArrowRight size={12} />
-                  </span>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/65 to-transparent" />
+                <div className="absolute inset-x-0 bottom-0 p-5 text-white">
+                  <p className="mono-meta text-white/70 mb-2">{post.category}</p>
+                  <h2 className="text-2xl leading-tight">{post.title}</h2>
                 </div>
               </div>
             </Link>
-          </div>
-        ))}
+          ))}
+        </div>
       </section>
 
-      {/* Newsletter CTA */}
-      <section className="bg-accent text-white -mx-6 px-6 py-32 text-center">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-6xl md:text-8xl mb-12">SUBSCRIBE <br /> TO THE HUB.</h2>
-          <p className="text-xl md:text-2xl font-light opacity-80 mb-12 max-w-2xl mx-auto">
-            Enter your email below to receive updates on new stories, creative grants, and community events.
-          </p>
-          <form className="flex flex-col md:flex-row gap-4 max-w-lg mx-auto">
-            <input 
-              type="email" 
-              placeholder="TYPE YOUR EMAIL..." 
-              className="flex-grow px-8 py-4 bg-white/10 border border-white/20 rounded-full text-white placeholder:text-white/40 focus:outline-none focus:border-white transition-colors"
-            />
-            <button className="px-8 py-4 bg-white text-accent rounded-full font-display text-xl hover:scale-105 transition-transform">
-              SUBSCRIBE
-            </button>
-          </form>
+      <section className="text-center max-w-4xl mx-auto py-6">
+        <p className="text-4xl md:text-6xl leading-tight font-semibold">Numéro-style editorials meet modern creator interviews.</p>
+        <p className="mt-6 text-xl md:text-2xl opacity-70">
+          Stay close to the culture —
+          {' '}
+          <span className="underline underline-offset-4">subscribe to our instagram</span>
+        </p>
+      </section>
+
+      <section className="space-y-10">
+        <div className="flex items-end justify-between gap-4 border-b border-line pb-6">
+          <h2 className="text-5xl md:text-7xl tracking-tight lowercase">last interview</h2>
+          <Link to="/journal" className="mono-meta underline underline-offset-4">SEE MORE</Link>
+        </div>
+
+        <div className="space-y-2">
+          {posts.map((post) => (
+            <article
+              key={post.id}
+              className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 py-7 border-b border-line"
+            >
+              <div className="md:col-span-2">
+                <p className="text-2xl md:text-3xl font-display">{formatDateLabel(post.date)}</p>
+              </div>
+
+              <Link to={`/journal/${post.id}`} className="md:col-span-4 block group">
+                <div className="aspect-[16/10] overflow-hidden rounded-xl">
+                  <SmartImage
+                    src={post.image}
+                    alt={post.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+              </Link>
+
+              <div className="md:col-span-6 flex flex-col justify-between">
+                <div>
+                  <p className="mono-meta mb-3">{post.category}</p>
+                  <h3 className="text-3xl md:text-4xl leading-tight mb-4">{post.title}</h3>
+                  <p className="opacity-65 text-lg line-clamp-3">{post.excerpt}</p>
+                </div>
+                <Link
+                  to={`/journal/${post.id}`}
+                  className="mt-7 inline-flex items-center gap-2 mono-meta underline underline-offset-4 hover:text-accent transition-colors"
+                >
+                  READ
+                  <ArrowRight size={12} />
+                </Link>
+              </div>
+            </article>
+          ))}
         </div>
       </section>
     </div>
