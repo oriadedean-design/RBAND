@@ -3,12 +3,13 @@ import { BrowserRouter as Router, Routes, Route, useParams, Link } from 'react-r
 import { ThemeProvider } from './ThemeContext';
 import { Layout } from './components/Layout';
 import { motion } from 'motion/react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Share2 } from 'lucide-react';
 import { sanityService, JournalPost } from './services/sanityService';
 import { PortableText, PortableTextComponents } from '@portabletext/react';
 import { SmartImage } from './components/SmartImage';
 import { Seo } from './components/Seo';
 import { VideoEmbed } from './components/VideoEmbed';
+import { urlFor } from './lib/sanity';
 
 const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })));
 const Journal = lazy(() => import('./pages/Journal').then((m) => ({ default: m.Journal })));
@@ -22,6 +23,23 @@ const RouteLoading: React.FC = () => (
 
 const journalPortableTextComponents: PortableTextComponents = {
   types: {
+    image: ({ value }: any) => {
+      const imageUrl = value?.asset ? urlFor(value).width(1600).quality(80).auto('format').url() : null;
+      if (!imageUrl) return null;
+
+      return (
+        <figure className="my-10 space-y-3">
+          <SmartImage
+            src={imageUrl}
+            alt={value?.alt || 'Journal image'}
+            className="w-full rounded-xl object-cover"
+          />
+          {value?.caption ? (
+            <figcaption className="mono-meta opacity-60">{value.caption}</figcaption>
+          ) : null}
+        </figure>
+      );
+    },
     youtube: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'YouTube video'} /> : null,
     vimeo: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'Vimeo video'} /> : null,
     videoEmbed: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'Embedded video'} /> : null,
@@ -31,14 +49,19 @@ const journalPortableTextComponents: PortableTextComponents = {
 const JournalDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [post, setPost] = useState<JournalPost | null>(null);
+  const [relatedPosts, setRelatedPosts] = useState<JournalPost[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchPost = async () => {
       if (!id) return;
       try {
-        const data = await sanityService.getJournalPost(id);
+        const [data, allPosts] = await Promise.all([
+          sanityService.getJournalPost(id),
+          sanityService.getJournalPosts(),
+        ]);
         setPost(data);
+        setRelatedPosts(allPosts.filter((p) => p.id !== id).slice(0, 4));
       } catch (error) {
         console.error('Error fetching post:', error);
       } finally {
@@ -62,7 +85,10 @@ const JournalDetail: React.FC = () => {
       },
       image: post.image,
       datePublished: post.date,
+      dateModified: post.date,
       mainEntityOfPage: `https://rossehub.com/journal/${id}`,
+      articleSection: post.category,
+      keywords: [post.category, 'journal', 'magazine', 'creative'],
       publisher: {
         '@type': 'Organization',
         name: 'ROSSE HUB',
@@ -74,7 +100,7 @@ const JournalDetail: React.FC = () => {
   if (!post || !id) return <div className="p-20 text-center text-4xl">POST NOT FOUND</div>;
 
   return (
-    <div className="px-6 max-w-5xl mx-auto space-y-12 pb-32">
+    <div className="px-6 max-w-6xl mx-auto space-y-14 pb-32">
       <Seo
         title={post.title}
         description={post.excerpt}
@@ -88,58 +114,89 @@ const JournalDetail: React.FC = () => {
         </script>
       ) : null}
 
-      <Link to="/journal" className="mono-meta flex items-center gap-2 hover:text-accent transition-colors mb-12">
+      <Link to="/journal" className="mono-meta flex items-center gap-2 hover:text-accent transition-colors">
         <ArrowLeft size={12} /> BACK TO JOURNAL
       </Link>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-8"
-      >
-        <p className="mono-meta">{post.date} — {post.category}</p>
-        <h1 className="text-6xl md:text-8xl leading-tight">{post.title}</h1>
-        <p className="text-2xl font-serif italic opacity-60">By {post.author}</p>
-      </motion.div>
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-10 border-t border-line pt-10">
+        <aside className="lg:col-span-2 space-y-6">
+          <div>
+            <p className="mono-meta opacity-60">DATE</p>
+            <p className="font-display text-xl">{post.date}</p>
+          </div>
+          <div>
+            <p className="mono-meta opacity-60">CATEGORY</p>
+            <p className="font-display text-xl">{post.category}</p>
+          </div>
+          <div>
+            <p className="mono-meta opacity-60">AUTHOR</p>
+            <p className="font-display text-xl">{post.author}</p>
+          </div>
+          <button className="inline-flex items-center gap-2 mono-meta hover:text-accent transition-colors">
+            <Share2 size={12} /> SHARE
+          </button>
+        </aside>
 
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="aspect-video overflow-hidden rounded-3xl"
-      >
-        <SmartImage
-          src={post.image}
-          alt={post.title}
-          className="w-full h-full object-cover"
-          eager
-        />
-      </motion.div>
+        <article className="lg:col-span-10 space-y-10">
+          <motion.h1
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-5xl md:text-7xl leading-[0.95] uppercase"
+          >
+            {post.title}
+          </motion.h1>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-        className="prose prose-xl max-w-none text-ink/80 leading-relaxed space-y-8"
-      >
-        <p className="text-2xl font-light">{post.excerpt}</p>
-        {post.content ? (
-          <PortableText value={post.content} components={journalPortableTextComponents} />
-        ) : (
-          <>
-            <p>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-            </p>
-            <p>
-              Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Curabitur pretium tincidunt lacus. Nulla gravida orci a odio. Nullam varius, turpis et commodo pharetra, est eros bibendum elit, nec luctus magna felis sollicitudin mauris.
-            </p>
-            <h2 className="text-4xl font-display uppercase pt-8">THE CREATIVE PROCESS</h2>
-            <p>
-              Integer in mauris eu nibh euismod gravida. Duis ac tellus et risus vulputate vehicula. Donec lobortis risus a elit. Etiam tempor. Ut ullamcorper, ligula eu tempor congue, eros est euismod turpis, id tincidunt sapien risus a quam. Maecenas fermentum consequat mi. Donec fermentum. Pellentesque malesuada nulla a mi. Duis sapien sem, aliquet nec, commodo eget, consequat quis, neque.
-            </p>
-          </>
-        )}
-      </motion.div>
+          <div className="aspect-[16/9] overflow-hidden rounded-xl">
+            <SmartImage
+              src={post.image}
+              alt={post.title}
+              className="w-full h-full object-cover"
+              eager
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="md:col-span-8 prose prose-xl max-w-none text-ink/80 leading-relaxed space-y-8">
+              <p className="text-2xl font-light">{post.excerpt}</p>
+              {post.content ? (
+                <PortableText value={post.content} components={journalPortableTextComponents} />
+              ) : (
+                <p>
+                  Add rich body copy in Sanity for full editorial storytelling, including text blocks, inline images, and media embeds.
+                </p>
+              )}
+            </div>
+            <aside className="md:col-span-4 bg-ink text-bg p-6 rounded-xl h-fit">
+              <p className="mono-meta text-bg/70 mb-2">EDITOR NOTE</p>
+              <p className="text-xl mb-4">{post.author}</p>
+              <p className="text-sm text-bg/70 leading-relaxed">
+                This panel is ideal for pull quotes, editor bios, or campaign-side messaging and can be mapped to Sanity fields.
+              </p>
+            </aside>
+          </div>
+        </article>
+      </section>
+
+      {relatedPosts.length ? (
+        <section className="space-y-8 border-t border-line pt-12">
+          <h2 className="text-[14vw] leading-[0.85] uppercase tracking-tight">RELATED NEWS</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {relatedPosts.map((related) => (
+              <Link key={related.id} to={`/journal/${related.id}`} className="group block">
+                <div className="aspect-[4/5] rounded-xl overflow-hidden">
+                  <SmartImage
+                    src={related.image}
+                    alt={related.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                </div>
+                <p className="mono-meta mt-3">{related.category}</p>
+                <p className="mt-1 font-semibold leading-tight group-hover:text-accent transition-colors">{related.title}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 };
