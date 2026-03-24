@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
-import { ArrowRight, DollarSign, Users, Rocket } from 'lucide-react';
+import { DollarSign, Users, Rocket } from 'lucide-react';
 import { sanityService, GrantInfo } from '../services/sanityService';
+import { Seo } from '../components/Seo';
 
 export const Grant: React.FC = () => {
   const [grant, setGrant] = useState<GrantInfo | null>(null);
@@ -27,6 +27,11 @@ export const Grant: React.FC = () => {
 
   return (
     <div className="px-6 space-y-32">
+      <Seo
+        title="Creative Grant"
+        description={grant.description}
+        url="/grant"
+      />
       {/* Grant Intro */}
       <section className="min-h-[60vh] flex flex-col justify-center">
         <div className="editorial-grid">

@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { sanityService, JournalPost } from '../services/sanityService';
+import { SmartImage } from '../components/SmartImage';
+import { Seo } from '../components/Seo';
 
 export const Journal: React.FC = () => {
   const [posts, setPosts] = useState<JournalPost[]>([]);
@@ -27,6 +28,11 @@ export const Journal: React.FC = () => {
 
   return (
     <div className="px-6 space-y-32">
+      <Seo
+        title="Journal"
+        description="Read creator stories, blog posts, and behind-the-scenes features from ROSSE HUB."
+        url="/journal"
+      />
       {/* Editorial Intro */}
       <section className="min-h-[50vh] flex flex-col justify-center">
         <div className="editorial-grid">
@@ -68,11 +74,10 @@ export const Journal: React.FC = () => {
           >
             <Link to={`/journal/${post.id}`} className="group block">
               <div className={`relative overflow-hidden rounded-2xl ${idx % 3 === 0 ? 'aspect-[21/9]' : 'aspect-[4/5]'}`}>
-                <img 
+                <SmartImage
                   src={post.image} 
                   alt={post.title} 
                   className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                  referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8 text-white">
                   <p className="mono-meta text-white/60 mb-2">{post.date} — {post.category}</p>

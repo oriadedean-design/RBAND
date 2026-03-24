@@ -1,16 +1,32 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, Link } from 'react-router-dom';
 import { ThemeProvider } from './ThemeContext';
 import { Layout } from './components/Layout';
-import { Home } from './pages/Home';
-import { Journal } from './pages/Journal';
-import { Gallery } from './pages/Gallery';
-import { Grant } from './pages/Grant';
-import { About } from './pages/About';
 import { motion } from 'motion/react';
 import { ArrowLeft } from 'lucide-react';
 import { sanityService, JournalPost } from './services/sanityService';
-import { PortableText } from '@portabletext/react';
+import { PortableText, PortableTextComponents } from '@portabletext/react';
+import { SmartImage } from './components/SmartImage';
+import { Seo } from './components/Seo';
+import { VideoEmbed } from './components/VideoEmbed';
+
+const Home = lazy(() => import('./pages/Home').then((m) => ({ default: m.Home })));
+const Journal = lazy(() => import('./pages/Journal').then((m) => ({ default: m.Journal })));
+const Gallery = lazy(() => import('./pages/Gallery').then((m) => ({ default: m.Gallery })));
+const Grant = lazy(() => import('./pages/Grant').then((m) => ({ default: m.Grant })));
+const About = lazy(() => import('./pages/About').then((m) => ({ default: m.About })));
+
+const RouteLoading: React.FC = () => (
+  <div className="p-20 text-center mono-meta">LOADING PAGE...</div>
+);
+
+const journalPortableTextComponents: PortableTextComponents = {
+  types: {
+    youtube: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'YouTube video'} /> : null,
+    vimeo: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'Vimeo video'} /> : null,
+    videoEmbed: ({ value }: any) => value?.url ? <VideoEmbed url={value.url} title={value.title || 'Embedded video'} /> : null,
+  },
+};
 
 const JournalDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -32,16 +48,51 @@ const JournalDetail: React.FC = () => {
     fetchPost();
   }, [id]);
 
+  const articleSchema = useMemo(() => {
+    if (!post || !id) return null;
+
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: post.title,
+      description: post.excerpt,
+      author: {
+        '@type': 'Person',
+        name: post.author,
+      },
+      image: post.image,
+      datePublished: post.date,
+      mainEntityOfPage: `https://rossehub.com/journal/${id}`,
+      publisher: {
+        '@type': 'Organization',
+        name: 'ROSSE HUB',
+      },
+    };
+  }, [post, id]);
+
   if (loading) return <div className="p-20 text-center mono-meta">LOADING POST...</div>;
-  if (!post) return <div className="p-20 text-center text-4xl">POST NOT FOUND</div>;
+  if (!post || !id) return <div className="p-20 text-center text-4xl">POST NOT FOUND</div>;
 
   return (
     <div className="px-6 max-w-5xl mx-auto space-y-12 pb-32">
+      <Seo
+        title={post.title}
+        description={post.excerpt}
+        image={post.image}
+        url={`/journal/${id}`}
+        type="article"
+      />
+      {articleSchema ? (
+        <script type="application/ld+json">
+          {JSON.stringify(articleSchema)}
+        </script>
+      ) : null}
+
       <Link to="/journal" className="mono-meta flex items-center gap-2 hover:text-accent transition-colors mb-12">
         <ArrowLeft size={12} /> BACK TO JOURNAL
       </Link>
-      
-      <motion.div 
+
+      <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         className="space-y-8"
@@ -51,21 +102,21 @@ const JournalDetail: React.FC = () => {
         <p className="text-2xl font-serif italic opacity-60">By {post.author}</p>
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: 0.2 }}
         className="aspect-video overflow-hidden rounded-3xl"
       >
-        <img 
-          src={post.image} 
-          alt={post.title} 
+        <SmartImage
+          src={post.image}
+          alt={post.title}
           className="w-full h-full object-cover"
-          referrerPolicy="no-referrer"
+          eager
         />
       </motion.div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4 }}
@@ -73,7 +124,7 @@ const JournalDetail: React.FC = () => {
       >
         <p className="text-2xl font-light">{post.excerpt}</p>
         {post.content ? (
-          <PortableText value={post.content} />
+          <PortableText value={post.content} components={journalPortableTextComponents} />
         ) : (
           <>
             <p>
@@ -98,14 +149,16 @@ const App: React.FC = () => {
     <ThemeProvider>
       <Router>
         <Layout>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/journal/:id" element={<JournalDetail />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/grant" element={<Grant />} />
-            <Route path="/about" element={<About />} />
-          </Routes>
+          <Suspense fallback={<RouteLoading />}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/journal" element={<Journal />} />
+              <Route path="/journal/:id" element={<JournalDetail />} />
+              <Route path="/gallery" element={<Gallery />} />
+              <Route path="/grant" element={<Grant />} />
+              <Route path="/about" element={<About />} />
+            </Routes>
+          </Suspense>
         </Layout>
       </Router>
     </ThemeProvider>

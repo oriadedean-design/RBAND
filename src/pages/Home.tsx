@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { BRAND } from '../constants';
-import { ArrowRight, ExternalLink, Plus } from 'lucide-react';
+import { ArrowRight, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SmartImage } from '../components/SmartImage';
+import { Seo } from '../components/Seo';
 import { sanityService, Creator, JournalPost } from '../services/sanityService';
 
 export const Home: React.FC = () => {
@@ -44,14 +45,18 @@ export const Home: React.FC = () => {
 
   return (
     <div className="px-6 space-y-24 pb-24">
+      <Seo
+        title="Home"
+        description="Discover top creators, visual stories, and community-driven creative opportunities at ROSSE HUB."
+        url="/"
+      />
       {/* Hero Section - Inspired by "DESIGN & FREEDOM" */}
       <section className="relative min-h-[90vh] flex flex-col justify-end overflow-hidden rounded-[2rem] border border-line">
         <div className="absolute inset-0">
-          <img 
-            src="https://images.unsplash.com/photo-1539109136881-3be0610acf4b?auto=format&fit=crop&q=80&w=2000" 
+          <SmartImage src="https://images.unsplash.com/photo-1539109136881-3be0610acf4b?auto=format&fit=crop&q=80&w=2000" 
             alt="Hero" 
             className="w-full h-full object-cover opacity-60"
-            referrerPolicy="no-referrer"
+            eager
           />
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-transparent" />
         </div>
@@ -115,11 +120,9 @@ export const Home: React.FC = () => {
           {creators.slice(0, 3).map((creator) => (
             <div key={creator.id} className="bento-card group cursor-pointer">
               <div className="aspect-square overflow-hidden rounded-xl mb-6 relative">
-                <img 
-                  src={creator.image} 
+                <SmartImage src={creator.image} 
                   alt={creator.name} 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  referrerPolicy="no-referrer"
                 />
                 <div className="absolute top-4 right-4 glass px-3 py-1 rounded-full flex items-center">
                   <span className="status-dot" />
@@ -154,11 +157,9 @@ export const Home: React.FC = () => {
           </div>
         </div>
         <div className="col-span-12 md:col-span-4 bento-card overflow-hidden p-0">
-          <img 
-            src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&q=80&w=1000" 
+          <SmartImage src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&q=80&w=1000" 
             alt="Advantage" 
             className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700"
-            referrerPolicy="no-referrer"
           />
         </div>
       </section>
@@ -173,11 +174,9 @@ export const Home: React.FC = () => {
           {posts.slice(0, 2).map((post) => (
             <Link key={post.id} to={`/journal/${post.id}`} className="bento-card group flex flex-col md:flex-row gap-8">
               <div className="w-full md:w-48 aspect-square overflow-hidden rounded-xl shrink-0">
-                <img 
-                  src={post.image} 
+                <SmartImage src={post.image} 
                   alt={post.title} 
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                  referrerPolicy="no-referrer"
                 />
               </div>
               <div className="flex flex-col justify-between py-2">
